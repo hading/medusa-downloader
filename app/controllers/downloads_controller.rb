@@ -49,8 +49,15 @@ class DownloadsController < ApplicationController
           end
           zip_stream.close
         end
-        send_data result.to_io.read, filename: "#{@request.zip_name}.zip", disposition: 'attachment',
-                  type: 'application/zip', stream: true
+        response.headers['Content-Type'] = 'application/zip'
+        ruby_result = result.to_io
+        while bytes = ruby_result.read(8192)
+          response.stream.write bytes
+        end
+        #send_data result.read, filename: "#{@request.zip_name}.zip", disposition: 'attachment',
+        #          type: 'application/zip', stream: true
+      ensure
+        response.stream.close
       end
     else
       render status: :not_found, plain: 'Manifest is not yet ready for this archive'
