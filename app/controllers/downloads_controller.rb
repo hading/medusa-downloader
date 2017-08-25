@@ -50,7 +50,7 @@ class DownloadsController < ApplicationController
           zip_stream.close
         end
         send_data result.to_io.read, filename: "#{@request.zip_name}.zip", disposition: 'attachment',
-                  type: 'application/zip'
+                  type: 'application/zip', stream: true
       end
     else
       render status: :not_found, plain: 'Manifest is not yet ready for this archive'
