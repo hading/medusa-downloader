@@ -35,6 +35,7 @@ class DownloadsController < ApplicationController
         pipe.connect(result)
         buffered_stream = BufferedOutputStream.new(pipe)
         zip_stream = ZipOutputStream.new(buffered_stream)
+        zip_stream.set_method(ZipOutputStream::STORED)
         manifest = File.open(@request.manifest_path)
         copy_thread = Thread.new do
           manifest.each_line do |line|
@@ -46,6 +47,7 @@ class DownloadsController < ApplicationController
             zip_stream.put_next_entry(zip_entry)
             input_stream = File.open(real_path, 'rb').to_inputstream
             IOUtils.copy_large(input_stream, zip_stream)
+            zip_stream.close_entry
           end
           zip_stream.close
         end
