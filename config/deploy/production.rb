@@ -7,14 +7,14 @@
 # server 'example.com', user: 'deploy', roles: %w{app web}, other_property: :other_value
 # server 'db.example.com', user: 'deploy', roles: %w{db}
 
-set :home, '/services/medusa'
-set :deploy_to, "#{fetch(:home)}/medusa-downloader-capistrano"
-set :bundle_path, nil
-
-server 'fedora-prod.library.illinois.edu', user: 'medusa', roles: %w(web app db), primary: true
-
-#set :home, '/home/lib-medusa-downloader'
+#set :home, '/services/medusa'
 #set :deploy_to, "#{fetch(:home)}/medusa-downloader-capistrano"
+#set :bundle_path, nil
+
+server 'fedora-prod.library.illinois.edu', user: 'lib-medusa-downloader', roles: %w(web app db), primary: true
+
+set :home, '/home/lib-medusa-downloader'
+set :deploy_to, "#{fetch(:home)}/medusa-downloader-capistrano"
 #set :bundle_path, nil
 
 #server 'fedora-prod.library.illinois.edu', user: 'lib-medusa-downloader', roles: %w(web app db), primary: true

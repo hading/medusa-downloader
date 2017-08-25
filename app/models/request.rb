@@ -13,15 +13,15 @@ class Request < ActiveRecord::Base
   after_destroy :delete_manifest_and_links
 
   def download_url
-    "#{Config.nginx_url}/downloads/#{root}/#{downloader_id}/get"
+    "#{DownloaderConfig.nginx_url}/downloads/#{root}/#{downloader_id}/get"
   end
 
   def status_url
-    "#{Config.nginx_url}/downloads/#{root}/#{downloader_id}/status"
+    "#{DownloaderConfig.nginx_url}/downloads/#{root}/#{downloader_id}/status"
   end
 
   def manifest_url
-    "#{Config.nginx_url}/downloads/#{root}/#{downloader_id}/manifest"
+    "#{DownloaderConfig.nginx_url}/downloads/#{root}/#{downloader_id}/manifest"
   end
 
   def has_manifest?
@@ -29,7 +29,7 @@ class Request < ActiveRecord::Base
   end
 
   def storage_path
-    File.join(Config.instance.storage_path, relative_storage_path)
+    File.join(DownloaderConfig.instance.storage_path, relative_storage_path)
   end
 
   def relative_storage_path
@@ -126,7 +126,7 @@ class Request < ActiveRecord::Base
   end
 
   def relative_path_to(absolute_path)
-    absolute_path.sub(/^#{Config.instance.storage_path}/, '')
+    absolute_path.sub(/^#{DownloaderConfig.instance.storage_path}/, '')
   end
 
   STATUSES.each do |status|

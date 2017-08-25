@@ -1,6 +1,6 @@
 require 'singleton'
 
-class Config < Object
+class DownloaderConfig < Object
   include Singleton
 
   attr_accessor :config

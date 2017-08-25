@@ -4,7 +4,7 @@ class StorageRoot
   attr_accessor :name, :path, :pathname, :real_path
 
   def self.find(name)
-    root = Config.root_named(name)
+    root = DownloaderConfig.root_named(name)
     raise Request::InvalidRoot unless root
     return new(root)
   end

@@ -7,7 +7,7 @@ namespace :downloader do
       request.destroy!
     end
     #prune the directory tree - this removes empty directories working from the leaves up
-    Dir.chdir(Config.instance.storage_path) do
+    Dir.chdir(DownloaderConfig.instance.storage_path) do
       system("find . -type d -empty -delete")
     end
   end

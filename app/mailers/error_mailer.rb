@@ -1,6 +1,6 @@
 class ErrorMailer < ApplicationMailer
 
-  default to: Config.admin_email
+  default to: DownloaderConfig.admin_email
   default subject: 'Medusa Downloader error'
   default from: 'no-reply@medusa.illinois.edu'
 

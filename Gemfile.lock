@@ -63,9 +63,9 @@ GEM
     capistrano-rails (1.3.0)
       capistrano (~> 3.1)
       capistrano-bundler (~> 1.1)
-    capistrano-rvm (0.1.2)
-      capistrano (~> 3.0)
-      sshkit (~> 1.2)
+    capistrano-rbenv (2.1.1)
+      capistrano (~> 3.1)
+      sshkit (~> 1.3)
     capybara (2.15.1)
       addressable
       mini_mime (>= 0.1.3)
@@ -76,9 +76,9 @@ GEM
     capybara-email (2.5.0)
       capybara (~> 2.4)
       mail
-    coffee-rails (4.1.1)
+    coffee-rails (4.2.2)
       coffee-script (>= 2.2.0)
-      railties (>= 4.0.0, < 5.1.x)
+      railties (>= 4.0.0)
     coffee-script (2.4.1)
       coffee-script-source
       execjs
@@ -317,10 +317,10 @@ DEPENDENCIES
   bunny
   capistrano-bundler
   capistrano-rails
-  capistrano-rvm
+  capistrano-rbenv
   capybara
   capybara-email
-  coffee-rails (~> 4.1.0)
+  coffee-rails
   connection_pool
   cucumber-rails
   daemons
@@ -329,7 +329,7 @@ DEPENDENCIES
   factory_girl
   font-awesome-rails
   haml-rails
-  jbuilder (~> 2.0)
+  jbuilder
   jquery-rails
   json_spec
   less-rails
@@ -338,8 +338,8 @@ DEPENDENCIES
   rails (= 4.2.5)
   rpairtree
   rspec-rails
-  sass-rails (~> 5.0)
-  sdoc (~> 0.4.0)
+  sass-rails
+  sdoc
   shoulda
   simplecov
   spring
@@ -348,7 +348,7 @@ DEPENDENCIES
   therubyrhino
   turbolinks
   twitter-bootstrap-rails
-  uglifier (>= 1.3.0)
+  uglifier
   web-console
 
 BUNDLED WITH

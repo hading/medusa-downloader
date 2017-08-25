@@ -14,7 +14,7 @@ class AmqpConnector < Object
   end
 
   def reinitialize
-    config = Config.amqp
+    config = DownloaderConfig.amqp
     config.merge!(recover_from_connection_close: true)
     self.known_queues = Set.new
     self.connection.close if self.connection

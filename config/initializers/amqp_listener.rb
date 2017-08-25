@@ -2,14 +2,14 @@ if defined?(PhusionPassenger)
   PhusionPassenger.on_event(:starting_worker_process) do |forked|
     if forked
       begin
-        connection = Bunny.new(Config.instance.amqp)
+        connection = Bunny.new(DownloaderConfig.instance.amqp)
         connection.start
         Kernel.at_exit do
           connection.close rescue nil
         end
         Rails.logger.error 'Starting AMQP listener'
         channel = connection.create_channel
-        queue = channel.queue(Config.instance.incoming_queue, durable: true)
+        queue = channel.queue(DownloaderConfig.instance.incoming_queue, durable: true)
         queue.subscribe do |delivery_info, properties, payload|
           begin
             AmqpRequestBridge.create_request(payload)

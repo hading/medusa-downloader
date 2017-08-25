@@ -1,20 +1,52 @@
 class DownloadsController < ApplicationController
 
-  # include ActionController::Live
-  # include ZipTricks::RailsStreaming
-  include ActionController::Streaming
-  include Zipline
+  include ActionController::Live
+  #include ActionController::Streaming
+
+  java_import java.io.BufferedOutputStream
+  java_import java.util.zip.ZipOutputStream
+  java_import java.util.zip.ZipEntry
+  require File.join(Rails.root, 'jars/commons-io-2.5.jar')
+  java_import org.apache.commons.io.IOUtils
 
   before_filter :get_request, only: %i(get status manifest download)
-  if Config.instance.auth_active?
+  if DownloaderConfig.instance.auth_active?
     before_filter :authenticate, only: :create
   end
   skip_before_filter :verify_authenticity_token, only: :create
-  
+
   def get
     if @request.ready?
       response.headers['X-Archive-Files'] = 'zip'
       send_file @request.manifest_path, disposition: :attachment, filename: "#{@request.zip_name}.zip"
+    else
+      render status: :not_found, plain: 'Manifest is not yet ready for this archive'
+    end
+  end
+
+  def download
+    if @request.ready?
+      #set headers appropriately
+      response.headers['Content-Type'] = 'application/zip'
+      begin
+        java_stream = response.stream.to_outputstream
+        buffered_stream = BufferedOutputStream.new(java_stream)
+        zip_stream = ZipOutputStream.new(buffered_stream)
+        manifest = File.open(@request.manifest_path)
+        manifest.each_line do |line|
+          line.chomp!
+          dash, size, content_path, zip_path = line.split(' ', 4)
+          content_path.gsub!(/^\/internal\//, '')
+          real_path = File.join(DownloaderConfig.instance.storage_path, content_path)
+          zip_entry = ZipEntry.new(zip_path)
+          zip_stream.put_next_entry(zip_entry)
+          input_stream = File.open(real_path, 'rb').to_inputstream
+          IOUtils.copy_large(input_stream, zip_stream)
+        end
+      ensure
+        response.stream.close
+      end
+
     else
       render status: :not_found, plain: 'Manifest is not yet ready for this archive'
     end
@@ -29,7 +61,7 @@ class DownloadsController < ApplicationController
   #         dash, size, content_path, zip_path = line.split(' ', 4)
   #         content_path.gsub!(/^\/internal\//, '')
   #         zip.write_stored_file(zip_path) do |target|
-  #           real_path = File.join(Config.instance.storage_path, content_path)
+  #           real_path = File.join(DownloaderConfig.instance.storage_path, content_path)
   #           Rails.logger.error("Content: #{real_path}, Zip: #{zip_path}, Size: #{size}")
   #           File.open(real_path, 'rb') do |source|
   #             IO.copy_stream(source, target)
@@ -42,22 +74,22 @@ class DownloadsController < ApplicationController
   #   end
   # end
 
-  def download
-    if @request.ready?
-      manifest = File.open(@request.manifest_path)
-      file_struct = Struct.new(:file)
-      files = manifest.each_line.collect do |line|
-        line.chomp!
-        dash, size, content_path, zip_path = line.split(' ', 4)
-        content_path.gsub!(/^\/internal\//, '')
-        real_path = File.join(Config.instance.storage_path, content_path)
-        [file_struct.new(real_path), zip_path]
-      end
-      zipline(files, "#{@request.zip_name}.zip")
-    else
-      render status: :not_found, plain: 'Manifest is not yet ready for this archive'
-    end
-  end
+  # def download
+  #   if @request.ready?
+  #     manifest = File.open(@request.manifest_path)
+  #     file_struct = Struct.new(:file)
+  #     files = manifest.each_line.collect do |line|
+  #       line.chomp!
+  #       dash, size, content_path, zip_path = line.split(' ', 4)
+  #       content_path.gsub!(/^\/internal\//, '')
+  #       real_path = File.join(DownloaderConfig.instance.storage_path, content_path)
+  #       [file_struct.new(real_path), zip_path]
+  #     end
+  #     zipline(files, "#{@request.zip_name}.zip")
+  #   else
+  #     render status: :not_found, plain: 'Manifest is not yet ready for this archive'
+  #   end
+  # end
 
 
   def status
@@ -100,8 +132,8 @@ class DownloadsController < ApplicationController
   end
 
   def authenticate
-    authenticate_or_request_with_http_digest(Config.auth[:realm]) do |user|
-      Config.auth[:users][user]
+    authenticate_or_request_with_http_digest(DownloaderConfig.auth[:realm]) do |user|
+      DownloaderConfig.auth[:users][user]
     end
   end
 
