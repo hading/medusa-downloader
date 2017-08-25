@@ -49,6 +49,8 @@ class Request < ActiveRecord::Base
     FileUtils.rm_rf(storage_path) if Dir.exist?(storage_path)
   end
 
+  #TODO - uses a lot of memory to generate the file list first and then link if
+  #the package has a lot of files. See about streamlining that.
   def generate_manifest_and_links
     self.status = 'creating_manifest'
     FileUtils.mkdir_p(File.dirname(manifest_path))
@@ -56,10 +58,12 @@ class Request < ActiveRecord::Base
     generate_file_list
     self.total_size = 0
     File.open(manifest_path, 'wb') do |f|
-      self.file_list.each.with_index do |spec, i|
+      self.file_list.each.with_index do |spec, index|
         path, zip_path, size = spec
         self.total_size += size
-        symlink_path = File.join(data_path, i.to_s)
+        symlink_dir = File.join(data_path, (index / 5000).to_s)
+        FileUtils.mkdir_p(symlink_dir)
+        symlink_path = File.join(symlink_dir, (index % 5000).to_s)
         FileUtils.symlink(path, symlink_path)
         final_path = "#{zip_name}/#{zip_path}".gsub(/\/+/, '/')
         f.write "- #{size} /internal#{relative_path_to(symlink_path)} #{final_path}\r\n"
