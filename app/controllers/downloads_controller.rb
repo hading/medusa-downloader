@@ -29,6 +29,7 @@ class DownloadsController < ApplicationController
       #set headers appropriately
       response.headers['Content-Type'] = 'application/zip'
       begin
+        x = response.stream
         java_stream = response.stream.to_outputstream
         buffered_stream = BufferedOutputStream.new(java_stream)
         zip_stream = ZipOutputStream.new(buffered_stream)
