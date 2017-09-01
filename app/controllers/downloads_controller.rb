@@ -36,11 +36,8 @@ class DownloadsController < ApplicationController
         pipe = PipedOutputStream.new
         result = PipedInputStream.new
         pipe.connect(result)
-#        buffered_result = BufferedInputStream.new(result, BUFFER_SIZE)
-#        buffered_stream = BufferedOutputStream.new(pipe, BUFFER_SIZE)
         zip_stream = ZipOutputStream.new(pipe)
         zip_stream.set_level(0)
-        #zip_stream.set_method(ZipOutputStream::STORED)
         manifest = File.open(@request.manifest_path)
         copy_thread = Thread.new do
           manifest.each_line do |line|
@@ -57,28 +54,10 @@ class DownloadsController < ApplicationController
         end
         response.headers['Content-Type'] = 'application/zip'
         #TODO: for request 9, with 1M files, this keeps ending early - can we make it not?
-        #Maybe try reading the java stream directly - need to findout how to deal with byte arrays in jruby to do this
         buffer = Java::byte[BUFFER_SIZE].new
         while (bytes_read = result.read(buffer)) != -1
-#          response.stream.write buffer.to_a.first(bytes_read).pack('C*')
           response.stream.write String.from_java_bytes(buffer).first(bytes_read)
         end
-        
-        # # This wasn't working properly
-        # ruby_result = result.to_io
-        # while bytes = ruby_result.read(8192)
-        #   response.stream.write bytes
-        # end
-        
-        # #This was stopping before we finished; I don't know why
-        #ruby_result = result.to_io
-        # begin
-        #   while bytes = ruby_result.readpartial(8192)
-        #     response.stream.write(bytes)
-        #   end
-        # rescue EOFError
-        #   #do nothing - we're done
-        # end
       ensure
         response.stream.close
       end
