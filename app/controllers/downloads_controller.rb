@@ -53,7 +53,6 @@ class DownloadsController < ApplicationController
           zip_stream.close
         end
         response.headers['Content-Type'] = 'application/zip'
-        #TODO: for request 9, with 1M files, this keeps ending early - can we make it not?
         buffer = Java::byte[BUFFER_SIZE].new
         while (bytes_read = result.read(buffer)) != -1
           response.stream.write String.from_java_bytes(buffer).first(bytes_read)
