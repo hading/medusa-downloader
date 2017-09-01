@@ -58,3 +58,10 @@ def execute_rake(task)
     end
   end
 end
+
+#There is a problem with jruby ssl support that affects capistrano deployment
+#At least up to 9.1.12.0
+#See https://github.com/jruby/jruby/issues/4191, from which this
+#was copied
+Net::SSH::Transport::Algorithms::ALGORITHMS.values.each { |algs| algs.reject! { |a| a =~ /^ecd(sa|h)-sha2/ } }
+Net::SSH::KnownHosts::SUPPORTED_TYPE.reject! { |t| t =~ /^ecd(sa|h)-sha2/ }
