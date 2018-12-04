@@ -1,3 +1,4 @@
+require 'csv'
 class ManifestGenerator::Base
 
   attr_accessor :storage_root, :request, :file_list, :total_size
@@ -20,8 +21,10 @@ class ManifestGenerator::Base
   #etc.
   def generate_file_list
     self.file_list = Concurrent::Array.new
-    targets.each do |target|
-      add_target(target)
+    CSV.open(request.tar_manifest_path, 'w') do |tar_manifest_csv|
+      targets.each do |target|
+        add_target(target, tar_manifest_csv)
+      end
     end
   end
 
@@ -37,20 +40,20 @@ class ManifestGenerator::Base
     absolute_path.sub(/^#{Config.instance.storage_path}/, '')
   end
 
-  def add_target(target)
+  def add_target(target, tar_manifest_csv)
     case target['type']
     when 'file'
-      add_file(target)
+      add_file(target, tar_manifest_csv)
     when 'directory'
-      add_directory(target)
+      add_directory(target, tar_manifest_csv)
     when 'literal'
-      add_literal(target)
+      add_literal(target, tar_manifest_csv)
     else
       raise InvalidTargetTypeError.new(target)
     end
   end
 
-  def add_literal(target)
+  def add_literal(target, tar_manifest_csv)
     FileUtils.mkdir_p(literal_path)
     file = new_literal_file
     File.open(file, 'w') do |f|
@@ -60,13 +63,12 @@ class ManifestGenerator::Base
     name = target['name'] || (raise RuntimeError "Name must be provided for literal content.")
     zip_file_path = File.join(path, name)
     self.file_list << [file, zip_file_path, File.size(file), true]
+    tar_manifest_csv << ['literal', zip_file_path, nil, target['content']]
   end
 
   def new_literal_file
     name = File.join(literal_path, SecureRandom.hex(6))
     File.exist?(name) ? literal_file_name : name
   end
-
-
 
 end

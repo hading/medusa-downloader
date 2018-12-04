@@ -34,6 +34,7 @@ gem 'font-awesome-rails'
 gem 'rpairtree', require: 'pairtree'
 gem 'zip_tricks'
 gem 'zipline'
+gem 'minitar'
 gem 'nokogiri'
 
 gem 'medusa_storage', git: 'https://github.com/medusa-project/medusa_storage.git', branch: 'master'

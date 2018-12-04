@@ -1,4 +1,5 @@
 require 'open3'
+require 'csv'
 class DownloadsController < ApplicationController
 
   include ActionController::Live
@@ -6,7 +7,7 @@ class DownloadsController < ApplicationController
   # include ActionController::Streaming
   #include Zipline
 
-  before_action :get_request, only: %i(get status manifest download)
+  before_action :get_request, only: %i(get status manifest download download_tar)
   skip_before_action :verify_authenticity_token, only: :create
 
   def get
@@ -95,6 +96,49 @@ class DownloadsController < ApplicationController
       end
     else
       render status: :not_found, plain: 'Manifest is not yet ready for this archive'
+    end
+  end
+
+  #TODO - create a separate 'tar manifest' that is just target location/key pairs from the storage
+  # and whatever for literals. Maybe a CSV of type: content/literal, target, key, literal. One of key/literal will be blank
+  # Use that to do this.
+  def download_tar
+    if @request.ready?
+      begin
+        response.headers['Content-Type'] = 'application/x-tar'
+        filename = "#{@request.zip_name || @request.downloader_id}.tar"
+        response.headers['Content-Disposition'] = %Q(attachment; filename=#{filename})
+        tar_read_pipe, tar_write_pipe = IO.pipe
+        tar_writer = Archive::Tar::Minitar::Writer.open(tar_write_pipe)
+        manifest = CSV.open(@request.tar_manifest_path)
+        tar_write_thread = Thread.new do
+          manifest.each_line do |type, target, key, literal|
+            case type
+            when 'content'
+              tar_writer.add_file(target, mode: 0644, mtime: @request.storage_root.mtime(key)) do |tar_io, opts|
+                @request.storage_root.with_output_io(key) do |object_io|
+                  IO.copy_stream(object_io, tar_io)
+                end
+              end
+            when 'literal'
+              tar_writer.add_file(target, mode: 0644, mtime: Time.now, data: literal)
+            else
+              raise "Unrecognized type"
+            end
+          end
+        end
+        render text: proc {|response, output|
+          buffer = ''
+          while tar_read_pipe.read(1024, buffer)
+            output.write(buffer)
+          end
+        }
+        tar_write_thread.join
+      ensure
+        response.stream.close
+      end
+    else
+      render status: :notfound, plain: 'Manifest is not yet ready for this archive'
     end
   end
 

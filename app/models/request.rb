@@ -40,6 +40,10 @@ class Request < ActiveRecord::Base
     File.join(storage_path, 'manifest.txt')
   end
 
+  def tar_manifest_path
+    File.join(storage_path, 'tar_manifest.csv')
+  end
+
   def delete_manifest_and_links
     FileUtils.rm_rf(storage_path) if Dir.exist?(storage_path)
   end

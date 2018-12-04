@@ -3,7 +3,7 @@ class ManifestGenerator::S3 < ManifestGenerator::Base
   delegate :bucket, :region, to: :storage_root
 
 
-  def add_file(target)
+  def add_file(target, tar_manifest_csv)
     path = target['zip_path'] || ''
     name = target['name'] || File.basename(target['path'])
     zip_file_path = File.join(path, name)
@@ -11,11 +11,12 @@ class ManifestGenerator::S3 < ManifestGenerator::Base
     size = storage_root.size(key)
     file_url = storage_root.presigned_get_url(key)
     self.file_list << [file_url, zip_file_path, size, false]
+    tar_manifest_csv << ['stored', zip_file_path, key, nil]
   rescue Aws::S3::Errors::NotFound
     raise MedusaStorage::InvalidKeyError.new(request.root, target['path'])
   end
 
-  def add_directory(target)
+  def add_directory(target, tar_manifest_csv)
     directory_key = storage_root.ensure_directory_key(target['path'])
     keys = if target['recursive'] == true
              storage_root.subtree_keys(directory_key)
@@ -23,12 +24,16 @@ class ManifestGenerator::S3 < ManifestGenerator::Base
              storage_root.file_keys(directory_key)
            end
     zip_path = target['zip_path'] || target['path']
+    mutex = Mutex.new
     Parallel.each(keys, in_threads: 10) do |key|
       begin
         zip_file_path = File.join(zip_path, target['path'])
         size = storage_root.size(key)
         file_url = storage_root.presigned_get_url(key)
         self.file_list << [file_url, zip_file_path, size, false]
+        mutex.synchronize do
+          tar_manifest_csv << ['content', zip_file_path, key, nil]
+        end
       rescue Aws::S3::Errors::NotFound
         raise MedusaStorage::InvalidKeyError.new(request.root, key)
       end
