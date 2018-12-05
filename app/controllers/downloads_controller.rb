@@ -115,13 +115,13 @@ class DownloadsController < ApplicationController
           manifest.each_line do |type, target, key, literal|
             case type
             when 'content'
-              tar_writer.add_file(target, mode: 0644, mtime: @request.storage_root.mtime(key)) do |tar_io, opts|
+              tar_writer.add_file(normalize_tar_target(target), mode: 0644, mtime: @request.storage_root.mtime(key)) do |tar_io, opts|
                 @request.storage_root.with_output_io(key) do |object_io|
                   IO.copy_stream(object_io, tar_io)
                 end
               end
             when 'literal'
-              tar_writer.add_file(target, mode: 0644, mtime: Time.now, data: literal)
+              tar_writer.add_file(normalize_tar_target(target), mode: 0644, mtime: Time.now, data: literal)
             else
               raise "Unrecognized type"
             end
@@ -140,6 +140,10 @@ class DownloadsController < ApplicationController
     else
       render status: :notfound, plain: 'Manifest is not yet ready for this archive'
     end
+  end
+
+  def normalize_tar_target(target)
+    target.sub(/^(\/)+/, '')
   end
 
   # def download
