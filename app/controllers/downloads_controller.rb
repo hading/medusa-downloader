@@ -102,6 +102,7 @@ class DownloadsController < ApplicationController
   #TODO - create a separate 'tar manifest' that is just target location/key pairs from the storage
   # and whatever for literals. Maybe a CSV of type: content/literal, target, key, literal. One of key/literal will be blank
   # Use that to do this.
+  # If this doesn't work directly, maybe try writing to response.stream as is done in the current download method.
   def download_tar
     if @request.ready?
       begin
@@ -129,8 +130,13 @@ class DownloadsController < ApplicationController
         end
         render text: proc {|response, output|
           buffer = ''
-          while tar_read_pipe.read(1024, buffer)
-            output.write(buffer)
+          begin
+            while true
+              tar_read_pipe.readpartial(1024, buffer)
+              output.write(buffer) if buffer.length > 0
+            end
+          rescue EOFError
+            Rails.logger.info "Done reading pipe"
           end
         }
         tar_write_thread.join
