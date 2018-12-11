@@ -27,7 +27,7 @@ class ManifestGenerator::S3 < ManifestGenerator::Base
     mutex = Mutex.new
     Parallel.each(keys, in_threads: 10) do |key|
       begin
-        zip_file_path = File.join(zip_path, target['path'])
+        zip_file_path = File.join(zip_path, key)
         size = storage_root.size(key)
         file_url = storage_root.presigned_get_url(key)
         self.file_list << [file_url, zip_file_path, size, false]
